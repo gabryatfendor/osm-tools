@@ -14,8 +14,15 @@ if [ $# -eq 0 ]
      exit
 fi
 
+#getting data from following query
+
+#http://overpass-api.de/api/interpreter?data=[out:csv(::id,"name","ref","network";true;",")];
+#area["name"="$1"]->.a;
+#relation["route"="hiking"]["network"="lwn"]["ref"](area.a);out;\n
+
+
 wget -nc -O $1.csv "http://overpass-api.de/api/interpreter?data=%5Bout%3Acsv%28%3A%3Aid%2C%22name%22%2C%22ref%22%2C%22network%22%3Btrue%3B%22%2C%22%29%5D%3Barea%5B%22name%22%3D%22$1%22%5D%2D%3E%2Ea
-%3Brelation%5B%22route%22%3D%22hiking%22%5D%5B%22network%22%3D%22lwn%22%5D%28area%2Ea%29%3Bout%3B%0A"
+%3Brelation%5B%22route%22%3D%22hiking%22%5D%5B%22network%22%3D%22lwn%22%5D%5B%22ref%22%5D%28area%2Ea%29%3Bout%3B%0A"
 
 #   extracted OSM csv file example:
 #   @id,name,ref,network
