@@ -1,0 +1,12 @@
+#csv before rework
+*.csv
+
+#output for csv2wiki
+*.wiki
+
+#csv2wiki script. It's downloaded raw everytime
+csv2wiki
+
+#temp file for monitor
+adiff.xml
+*.lst
