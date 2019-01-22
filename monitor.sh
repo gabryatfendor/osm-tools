@@ -71,3 +71,7 @@ else
 fi
 
 echo "</table><p>This page has been generated on $RUN" >> index.html
+
+echo "Removing temp file"
+rm adiff.xml
+rm changeset.lst
