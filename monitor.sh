@@ -40,10 +40,10 @@ if [ -z $AREACODE  ]
 fi
 
 # here you can select relation tags
-QUERY="http://overpass-api.de/api/interpreter?data=[out:xml][timeout:45][adiff:\"$T0\",\"$T1\"];area($AREACODE)->.searchArea;relation[\"operator\"~\"Club Alpino Italiano|CAI\"](area.searchArea);(._;>;);out meta geom;"
+QUERY="http://overpass-api.de/api/interpreter?data=[out:xml][timeout:45][adiff:\"$T0\",\"$T1\"];area($AREACODE)->.searchArea;relation[\"route\"~\"hiking\"][\"network\"~\"lwn\"][\"ref\"](area.searchArea);(._;>;);out meta geom;"
 
 
-echo "extracting CAIFVG yesterday differences ..."
+echo "extracting CAIFVG differences ..."
 
 wget -O adiff$OGGI.xml "$QUERY"
 
@@ -53,7 +53,7 @@ echo "sorting and compacting changeset list"
 sort -u changeset.lst -o changeset.lst
 CHAN=`cat changeset.lst | wc -l`
 
-echo "<h3>Changeset(s) created in interval</h3><br> Query: operator=CAI or operator=Club Alpino Italiano <br> Area: $PLACE<br>Interval: since $1 days ago<p>" > index.html
+echo "<h3>Changeset(s) created in interval</h3><br> Query:route=hiking, network=lwn, ref existing <br> Area: $PLACE<br>Interval: since $1 days ago<p>" > index.html
 echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>" >> index.html
 echo "<table><tr><th>OSMcha</th><th>Achavi</th></tr>" >> index.html
 
