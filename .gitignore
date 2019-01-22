@@ -10,3 +10,6 @@ csv2wiki
 #temp file for monitor
 adiff.xml
 *.lst
+
+#output for monitor.sh
+index.html
