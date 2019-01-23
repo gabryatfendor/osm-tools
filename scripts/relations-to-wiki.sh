@@ -1,28 +1,24 @@
 #!/bin/bash
 
+source ../common/string-utils.sh
+source ../common/osm-global-variables.sh
+
 #first argument must be OSM area name (i.e. Trieste)
-#output wikitable with paths in local walking network (lwn)
-#OSM csv extraction base on this query http://overpass-turbo.eu/s/Epu
 #REQUIRED csv2wiki python script (see wget below)
 
-wget -nc https://raw.githubusercontent.com/dlink/vbin/master/csv2wiki
-
-if [ $# -eq 0 ]
+if [ $# -lt 2 ]
    then
-     echo "area name needed"
-     echo "...exiting"
+     echo "Usage: ./relations-to-wiki <area-name (double quoted if with spaces)> <output file path>"
      exit
 fi
 
-#getting data from following query
+OUTPUT_FILE_PATH=$2
+wget -nc https://raw.githubusercontent.com/dlink/vbin/master/csv2wiki
 
-#http://overpass-api.de/api/interpreter?data=[out:csv(::id,"name","ref","network";true;",")];
-#area["name"="$1"]->.a;
-#relation["route"="hiking"]["operator"~"lwn"]["ref"](area.a);out;\n
+CSV_QUERY=`encode_url_string "[out:csv(::id,\"name\",\"ref\",\"network\";true;\",\")];area[\"name\"=\"$1\"]->.a;relation[\"route\"=\"hiking\"][\"operator\"~\"CAI\"][\"ref\"](area.a);out;"`
 
-
-wget -nc -O $1.csv "http://overpass-api.de/api/interpreter?data=%5Bout%3Acsv%28%3A%3Aid%2C%22name%22%2C%22ref%22%2C%22network%22%3Btrue%3B%22%2C%22%29%5D%3Barea%5B%22name%22%3D%22$1%22%5D%2D%3E%2Ea
-%3Brelation%5B%22route%22%3D%22hiking%22%5D%5B%22operator%22%7E%22CAI%22%5D%5B%22ref%22%5D%28area%2Ea%29%3Bout%3B%0A"
+echo $OVERPASS_API_URL$CSV_QUERY
+wget -nc -O $1.csv $OVERPASS_API_URL$CSV_QUERY
 
 #   extracted OSM csv file example:
 #   @id,name,ref,network
@@ -31,8 +27,9 @@ wget -nc -O $1.csv "http://overpass-api.de/api/interpreter?data=%5Bout%3Acsv%28%
 
 awk -F "," 'FNR == 1  {print $0} FNR > 1 { print "[https://openstreetmap.org/relation/"$1" "$1"],"$2","$3","$4 }' $1.csv > $1.tmp
 python csv2wiki $1.tmp > $1.wiki
+echo "Removing temp file..."
 rm $1.tmp
 rm csv2wiki
-echo "Removed csv2wiki script"
 rm $1.csv
-echo "Removed $1.csv"
+echo "Moving $1.wiki to $OUTPUT_FILE_PATH"
+mv $1.wiki $OUTPUT_FILE_PATH

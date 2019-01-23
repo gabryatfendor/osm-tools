@@ -1,28 +1,21 @@
 #!/bin/bash
 
+source ../common/string-utils.sh
+source ../common/osm-global-variables.sh
 #Script that will list and format all the track that needs maintenance
 #This information is taken from the tags maintenance and maintenance:it
 
 #The structure is taken by monitor.sh script by user cascafico
 
-#Usage: ./mantainme AREA-NAME outputFileName /path/for/output (--keep if you want to keep temp files, for debugging purpose)
-#If the are name has spaces in it, double quote it
-
-source ../common/string-utils.sh
-
-
 if [ $# -lt 3 ]
 	then
-		echo "Usage: ./mantainme AREA-NAME outputFileName /path/for/output (--keep if you want to keep temp files, for debugging purpose)"
-		echo "If AREA-NAME has spaces in it, double quote it"
+		echo "Usage: ./mantainme <area-name (double quoted if has spaces in it)> <output filename> <output file path> < --keep if you want to keep temp files, for debugging purpose>"
 		exit
 fi
 
 AREA=$1
 OUTPUT_FILENAME=$2
 OUTPUT_PATH=$3
-
-OVERPASS_API_URL="http://overpass-api.de/api/interpreter?data="
 
 AREACODE_QUERY=`encode_url_string "area[\"boundary\"=\"administrative\"][\"name\"=\"$AREA\"];out ids;"`
 AREACODE=`curl -s $OVERPASS_API_URL$AREACODE_QUERY | grep 3600 | awk -F "\"" '{print $2}'`
