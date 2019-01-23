@@ -28,30 +28,16 @@ fi
 echo "Input area is $AREA"
 echo "Related code is $AREACODE"
 
-QUERY="http://overpass-api.de/api/interpreter?data=[out:xml][timeout:45];area($AREACODE)->.searchArea;relation[\"operator\"~\"CAI\"][\"maintenance\"](area.searchArea);relation[\"operator\"~\"CAI\"][\"maintenance:it\"](area.searchArea);(._;>;);out meta geom;"
 
-wget -O maintenance.xml "$QUERY"
+wget -nc -O $1.csv "http://overpass-api.de/api/interpreter?data=%5Bout%3Acsv%28%3A%3Aid%2C%22name%22%2C%22ref%22%2C%22maintenance%22%2C%22maintenance%3Ait%22%3Btrue%3B%22%3B%22%29%5D%3Barea%5B%22name%22%3D%22$1%22%5D-%3E.a%3Brelation%5B%22operator%22%7E%22CAI%22%5D%5B%22maintenance%22%5D%28area.a%29%3Brelation%5B%22operator%22%7E%22CAI%22%5D%5B%22maintenance%3Ait%22%5D%28area.a%29%3Bout%3B"
 
-cat maintenance.xml | grep relation | awk -F "id=" ' { print $2 }'| awk -F "\"" ' { print $2 }' > tobemantained.lst
+awk -F ";" 'FNR==1 {print $0} FNR > 1 { print "<a href=\"https://openstreetmap.org/relation/"$1"\">"$1"</a>",";"$2,";"$3,";"$4,";"$5 }' $1.csv > $1.tmp
 
-sort -u tobemantained.lst -o tobemantained.lst
-MANT=`cat tobemantained.lst | wc -l`
-
-echo "<h3>List of tracks in $AREA that needs maintenance" > maintenance.html
+echo "<h3>List of tracks in $AREA that needs maintenance<br>" > maintenance.html
 echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>" >> maintenance.html
-echo "<table><tr><th>Relation</th><th>Maintenance</th><th>Maintenance:it</th></tr>" >> maintenance.html
+echo "<table><tr><th>Relation</th><th>Name</th><th>Ref Number</th><th>Maintenance</th><th>Maintenance:it</th></tr>" >> maintenance.html
 
-#now reading the real data
-while read -r line
-do
-	name="$line"
-	echo "<tr><td><a href=\"https://www.openstreetmap.org/relation/$line\">$line</a></td><td></td><td></td></tr>" >> maintenance.html
-done < "tobemantained.lst"
-
-if [ $MANT == 0 ]
-then
-	echo "<tr><td colspan = \"3\">No trail to mantain. Good job!</td></tr>" >> maintenance.html
-fi
+awk -F ";" ' NR>1 { print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td><td>"$5"</td></tr>"} ' $1.tmp >> maintenance.html
 
 echo "Removing temp file"
 rm tobemantained.lst
