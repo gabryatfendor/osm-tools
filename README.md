@@ -40,5 +40,5 @@ Usage
 ./timetosurvey.sh <area-name (double quoted if has spaces in it)> <days between surveys> <output filename> <output file path>
 ```
 
-This script will create an html file with a table where all the trail that, in the tag cai:survey, have a date older than the
+This script will create an html file with a table where all the trail that, in the tag survey:date, have a date older than the
 specified number of days (or no date at all) 
