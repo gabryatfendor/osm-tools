@@ -33,20 +33,20 @@ fi
 
 echo "Input area is $AREA"
 
-CSV_QUERY=`encode_url_string "[out:csv(::id,\"name\",\"ref\",\"survey:date\";true;\";\")];area[\"name\"=\"$AREA\"]->.a;relation[\"operator\"~\"CAI\"](area.a);out;"`
+CSV_QUERY=`encode_url_string "[out:csv(::id,ref,from,to,\"survey:date\";true;\";\")];area[name=\"$AREA\"]->.a;relation[operator~CAI](area.a);out;"`
 
 echo "Downloading query result..."
 
 wget -q -nc -O $AREA.csv $OVERPASS_API_URL$CSV_QUERY
 
-awk -F ";" 'FNR==1 {print $0} FNR > 1 { print "<a href=\"https://openstreetmap.org/relation/"$1"\">"$1"</a>",";"$2,";"$3,";"$4 }' $AREA.csv > $AREA.tmp
+awk -F ";" 'FNR==1 {print $0} FNR > 1 { print "<a href=\"https://openstreetmap.org/relation/"$1"\">"$1"</a>",";"$2,";"$3,";"$4, ";"$5 }' $AREA.csv > $AREA.tmp
 
 echo "<h3>List of tracks in $AREA that needs to be surveyed</h3><br><br>" > $OUTPUT_FILENAME
 echo "These tracks were not surveyed in the past $SURVEY_INTERVAL days, so they were all surveyed prior to $LIMIT_DATE<br>" >> $OUTPUT_FILENAME
 echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse;} .urgent {color: red; font-weight: bold;}</style>" >> $OUTPUT_FILENAME
-echo "<table><tr><th>Relation</th><th>Name</th><th>Ref Number</th><th>Last Known Survey Date</th></tr>" >> $OUTPUT_FILENAME
+echo "<table><tr><th>Relation</th><th>Ref Number</th><th>From</th><th>To</th><th>Last Known Survey Date</th></tr>" >> $OUTPUT_FILENAME
 
-awk -v limit_date="$LIMIT_DATE" -F ";" '{ if (NR>1 && $4!="" && $4 <= limit_date) print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td></tr>"; else if (NR>1 && $4=="") print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td class=\"urgent\">Never surveyed!</td></tr>"; } ' $AREA.tmp >> $OUTPUT_FILENAME
+awk -v limit_date="$LIMIT_DATE" -F ";" '{ if (NR>1 && $5!="" && $5 <= limit_date) print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td><td>"$5"</td></tr>"; else if (NR>1 && $5=="") print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td><td class=\"urgent\">Never surveyed!</td></tr>"; } ' $AREA.tmp >> $OUTPUT_FILENAME
 
 echo "</table>" >> $OUTPUT_FILENAME
 

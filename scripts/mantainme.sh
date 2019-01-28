@@ -29,16 +29,16 @@ fi
 echo "Input area is $AREA"
 echo "Related code is $AREACODE"
 
-CSV_QUERY=`encode_url_string "[out:csv(::id,\"name\",\"ref\",\"maintenance\",\"maintenance:it\";true;\";\")];area[\"name\"=\"$AREA\"]->.a;relation[\"operator\"~\"CAI\"][\"maintenance\"](area.a);relation[\"operator\"~\"CAI\"][\"maintenance:it\"](area.a);out;"`
+CSV_QUERY=`encode_url_string "[out:csv(::id,ref,from,to,maintenance,\"maintenance:it\";true;\";\")];area[\"name\"=\"$AREA\"]->.a;relation[\"operator\"~\"CAI\"][\"maintenance\"](area.a);relation[\"operator\"~\"CAI\"][\"maintenance:it\"](area.a);out;"`
 
 wget -nc -O $AREA.csv $OVERPASS_API_URL$CSV_QUERY
 
-awk -F ";" 'FNR==1 {print $0} FNR > 1 { print "<a href=\"https://openstreetmap.org/relation/"$1"\">"$1"</a>",";"$2,";"$3,";"$4,";"$5 }' $AREA.csv > $AREA.tmp
+awk -F ";" 'FNR==1 {print $0} FNR > 1 { print "<a href=\"https://openstreetmap.org/relation/"$1"\">"$1"</a>",";"$2,";"$3,";"$4,";"$5,";"$6 }' $AREA.csv > $AREA.tmp
 
 echo "<h3>List of tracks in $AREA that needs maintenance</h3>" > $OUTPUT_FILENAME
 echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>" >> $OUTPUT_FILENAME
-echo "<table><tr><th>Relation</th><th>Name</th><th>Ref Number</th><th>Maintenance</th><th>Maintenance:it</th></tr>" >> $OUTPUT_FILENAME
-awk -F ";" ' NR>1 { print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td><td>"$5"</td></tr>"} ' $AREA.tmp >> $OUTPUT_FILENAME
+echo "<table><tr><th>Relation</th><th>Ref number</th><th>From</th><th>To</th><th>Maintenance</th><th>Maintenance:it</th></tr>" >> $OUTPUT_FILENAME
+awk -F ";" ' NR>1 { print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td>"$4"</td><td>"$5"</td><td>"$6"</td></tr>"} ' $AREA.tmp >> $OUTPUT_FILENAME
 echo "</table>" >> $OUTPUT_FILENAME
 
 echo "<br><br><footer>Generated on `date`</footer>" >> $OUTPUT_FILENAME
