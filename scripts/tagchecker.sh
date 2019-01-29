@@ -27,7 +27,7 @@ fi
 
 echo "Input area is $AREA"
 
-CSV_QUERY=`encode_url_string "[out:csv(::id,ref,from,to,network,name,cai_scale,roundtrip,source,\"osmc_symbol\",symbol,\"symbol:it\",operator,ascent,descent,distance,\"duration:forward\",\"duration:backward\",\"rwn:name\",\"ref:REI\",note,\"note:it\",website,\"note:project_page\";true;\";\")];area[name=\"$AREA\"]->.a;relation[type=route][route=hiking][operator=\"$OPERATOR\"](area.a);out;"`
+CSV_QUERY=`encode_url_string "[out:csv(::id,ref,from,to,network,name,cai_scale,roundtrip,source,\"osmc:symbol\",symbol,\"symbol:it\",operator,ascent,descent,distance,\"duration:forward\",\"duration:backward\",\"rwn:name\",\"ref:REI\",note,\"note:it\",website,\"note:project_page\";true;\";\")];area[name=\"$AREA\"]->.a;relation[type=route][route=hiking][operator=\"$OPERATOR\"](area.a);out;"`
 
 echo "Downloading query result..."
 
