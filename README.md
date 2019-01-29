@@ -41,4 +41,14 @@ Usage
 ```
 
 This script will create an html file with a table where all the trail that, in the tag survey:date, have a date older than the
-specified number of days (or no date at all) 
+specified number of days (or no date at all)
+
+### tagchecker.sh
+Usage
+
+```bash
+./tagchecker <operator (double quoted if has spaces in it)> <output filename> <output file path>
+```
+
+This script create a table with the set of required tag for CAI relations (standards are here -> https://wiki.openstreetmap.org/wiki/CAI#Sentieri)
+for the specified operator. In this way you can quickly check which tags are missing 
