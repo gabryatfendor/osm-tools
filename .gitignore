@@ -1,6 +1,0 @@
-#output for csv2wiki
-*.wiki
-
-#output for monitor.sh
-index.html
-
