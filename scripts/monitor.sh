@@ -20,60 +20,85 @@ RUN=`date`
 T0=`date -d "yesterday 00:00" '+%Y-%m-%d'`T00:00:00Z
 T1=`date +"%Y-%m-%d"`T00:00:00Z
 
+echo $T0
+echo $T1
+
 if [[ "$1" =~ ^[0-9]+$ ]] ; then 
    T0=`date -d "$1 days ago 00:00" '+%Y-%m-%d'`T00:00:00Z
    else echo "first argument must be an integer"
    exit
 fi
 
-
 AREACODE_QUERY=`encode_url_string "area[\"boundary\"=\"administrative\"][\"name\"=\"$PLACE\"];out ids;"`
 AREACODE=`curl -s $OVERPASS_API_URL$AREACODE_QUERY | grep 3600 | awk -F "\"" '{print $2}'`
 echo $PLACE
 echo $AREACODE
-if [ -z $AREACODE  ]
-   then
-     echo "area name not found (please case sensitive)"
-     echo "...exiting"
-     exit
-fi
+
+# operator list (all the CAI sections in Emilia-Romagna
+#CAI_SECTIONS=( "Bologna" "Argenta" "Carpi" "Castelfranco Emilia" "Castelnovo Ne' Monti" "Cesena" "Faenza" "Ferrara" "Forlì" "Imola" "Lugo" "Modena" "Parma" "Piacenza" "Porretta Terme" "Ravenna" "Reggio Emilia" "Rimini" "Sassuolo" "Pavullo" )
+CAI_SECTIONS=( "Modena" )
+echo "<h2>List of changes made yesterday on CAI trail network</h2>" > $OUTPUT_FILE
 
 # here you can select relation tags
-QUERY="$OVERPASS_API_URL[out:xml][timeout:45][adiff:\"$T0\",\"$T1\"];area($AREACODE)->.searchArea;relation[\"operator\"~\"CAI\"][\"ref\"](area.searchArea);(._;>;);out meta geom;"
-
-
-echo "extracting CAIFVG differences ..."
-
-wget -O adiff$OGGI.xml "$QUERY"
-
-cat adiff$OGGI.xml | grep changeset | awk -F "changeset=" ' { print $2 }'| awk -F "\"" ' { print $2 }' > changeset.lst
-
-echo "sorting and compacting changeset list"
-sort -u changeset.lst -o changeset.lst
-CHAN=`cat changeset.lst | wc -l`
-
-echo "<h3>Changeset(s) created in interval</h3><br> Query:operator~CAI, ref existing <br> Area: $PLACE<br>Interval: since $1 days ago<p>" > $OUTPUT_FILE
-echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>" >> $OUTPUT_FILE
-echo "<table><tr><th>OSMcha</th><th>Achavi</th></tr>" >> $OUTPUT_FILE
-
-while read -r line
+# we cycle all operators through the array
+for operator in "${CAI_SECTIONS[@]}"
 do
-    name="$line"
-    echo "<tr><td><a href=\"https://osmcha.mapbox.com/changesets/$name?filters=%7B%22ids%22%3A%5B%7B%22label%22%3A%22$name%22%2C%22value%22%3A%22$name%22%7D%5D%7D\"> $line </a></td><td><a href=\"https://overpass-api.de/achavi/?changeset=$name\"> $line </a></td></tr>" >> $OUTPUT_FILE
-done < "changeset.lst"
+	githubstringexist=""
+	while [[ "$githubstringexist" -lt 1 ]]
+	do
+		echo "1 minute cooldown to avoid api overload"
+		sleep 60s
+		QUERY="$OVERPASS_API_URL[out:xml][timeout:120][adiff:\"$T0\",\"$T1\"];area($AREACODE)->.searchArea;relation[\"operator\"=\"CAI $operator\"][\"ref\"](area.searchArea);(._;>;);out meta geom;"
+		echo "extracting CAIFVG differences for CAI $operator ..."
 
-if [ $CHAN == 0 ]
-then 
-   echo "<tr><td colspan = \"2\">No changeset between $T0 and $T1</td></tr>" >> $OUTPUT_FILE
-else
-   echo "<tr><td colspan = \"2\">$CHAN changeset(s)  between $T0 and $T1</td></tr>" >> $OUTPUT_FILE
-fi
+		wget -O adiff$OGGI.xml "$QUERY"
+	
+		#remove all the previous versions
+		sed -i '/<old>/,/<\/old>/d' adiff$OGGI.xml
+		cat adiff$OGGI.xml | grep changeset > changeset.lst
 
-echo "</table><p>This page has been generated on $RUN" >> $OUTPUT_FILE
+		CHAN=`cat changeset.lst | wc -l`
 
-echo "Removing temp file"
-rm adiff.xml
-rm changeset.lst
+		echo "<h3>Changeset(s) created in interval</h3><br> Query:operator=CAI $operator, ref existing <br> Area: $PLACE<br>Interval: since $1 days ago<p>" >> $OUTPUT_FILE
+		echo "<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>" >> $OUTPUT_FILE
+		echo "<table><tr><th>Openstreetmap Object</th></tr>" >> $OUTPUT_FILE
+		addtogithubstring=""
+		while read -r line
+		do
+			timestamp=`echo $line | grep -oPm1 "(?<=timestamp)[^<]+" | awk '{print $1;}' | tr -d '=' | tr -d '"' | sed 's/[^0-9]//g'`
+			timestamptocompare=`echo $T0 | sed 's/[^0-9]//g'`
+			if [ $timestamp -ge $timestamptocompare ]
+			then
+				object_type=`echo $line | awk '{print $1;}' | tr -d '<'`
+        		id=`echo $line | awk '{print $2;}' | tr -d 'id=' | tr -d '"'`
+    			echo "<tr><td><a href=\"https://www.openstreetmap.org/$object_type/$id\">$object_type: $id</a></td></tr>" >> $OUTPUT_FILE
+				addtogithubstring+="'"$object_type"' -> '"$id"'\n"
+			fi
+		done < "changeset.lst"
+	
+		#create a github issue
+		githubstringexist=${#addtogithubstring}
+		if [ $githubstringexist -gt 1 ]
+		then
+			curl -u "GITHUB_USERNAME":"GITHUB_TOKEN" https://api.github.com/repos/GITHUB_USERNAME/GITHUB_REPO/issues -d '{"title":"CAI '"$operator"' generated on '"$T1"'","body":"'"$addtogithubstring"'"}'
+		fi	
+
+		echo "Line was $githubstringexist long"
+	done
+
+	if [[ "$CHAN" -eq 0 ]]
+	then 
+   		echo "<tr><td>No changeset between $T0 and $T1</td></tr>" >> $OUTPUT_FILE
+	else
+   		echo "<tr><td>$CHAN changeset(s)  between $T0 and $T1</td></tr>" >> $OUTPUT_FILE
+	fi
+
+	echo "</table><p>This table has been generated on $RUN" >> $OUTPUT_FILE
+
+	echo "Removing temp file"
+	#rm adiff.xml
+	rm changeset.lst
+done
 
 echo "Moving $OUTPUT_FILE to $OUTPUT_PATH"
 mv $OUTPUT_FILE $OUTPUT_PATH
